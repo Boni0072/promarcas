@@ -3,7 +3,7 @@ import { Settings as SettingsIcon, Save, Target, Building2, Images, Plus, Trash2
 import { getAll, create, update as updateDoc } from '@/lib/firestore';
 import type { Settings, BannerSlide } from '@/types';
 import { LoadingState } from '@/components/ui/States';
-import { BANNER_GRADIENT_OPTIONS, DEFAULT_BANNERS, MAX_BANNERS, createBanner } from '@/lib/banners';
+import { BANNER_GRADIENT_GROUPS, BANNER_GRADIENT_OPTIONS, DEFAULT_BANNERS, MAX_BANNERS, createBanner } from '@/lib/banners';
 
 const DEFAULT_SETTINGS: Settings = {
   id: '',
@@ -178,10 +178,38 @@ export function SettingsPage() {
                   <div><label className="label">Título</label><input className="input-field" value={banner.title} onChange={(e) => updateBanner(index, { title: e.target.value })} placeholder="Ex.: Semana do Consumidor" /></div>
                   <div><label className="label">Texto do botão</label><input className="input-field" value={banner.cta} onChange={(e) => updateBanner(index, { cta: e.target.value })} placeholder="Ex.: Ver ofertas" /></div>
                   <div className="sm:col-span-2"><label className="label">Subtítulo</label><input className="input-field" value={banner.subtitle} onChange={(e) => updateBanner(index, { subtitle: e.target.value })} placeholder="Descrição curta da campanha" /></div>
-                  <div><label className="label">Cor (gradiente)</label>
-                    <select className="input-field" value={banner.gradient} onChange={(e) => updateBanner(index, { gradient: e.target.value })}>
-                      {BANNER_GRADIENT_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                    </select>
+                  <div className="sm:col-span-2"><label className="label">Cor do banner (gradiente)</label>
+                    <div className="space-y-3 rounded-xl border border-gray-200 p-3">
+                      {BANNER_GRADIENT_GROUPS.map((group) => (
+                        <div key={group.title}>
+                          <p className="mb-1.5 text-xs font-semibold tracking-wide text-gray-500 uppercase">{group.title}</p>
+                          <div className="flex flex-wrap gap-2">
+                            {group.options.map((opt) => {
+                              const active = banner.gradient === opt.value;
+                              return (
+                                <button
+                                  key={opt.value}
+                                  type="button"
+                                  title={opt.label}
+                                  aria-label={`Cor do banner: ${opt.label}`}
+                                  aria-pressed={active}
+                                  onClick={() => updateBanner(index, { gradient: opt.value })}
+                                  className={`h-9 w-9 rounded-full bg-gradient-to-r ${opt.value} transition-transform hover:scale-110 ${
+                                    active ? 'ring-2 ring-primary-600 ring-offset-2' : 'ring-1 ring-black/10'
+                                  }`}
+                                />
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="mt-1.5 text-xs text-gray-500">
+                      Selecionado:{' '}
+                      <span className="font-medium text-gray-700">
+                        {BANNER_GRADIENT_OPTIONS.find((opt) => opt.value === banner.gradient)?.label ?? 'Personalizado'}
+                      </span>
+                    </p>
                   </div>
                   <div><label className="label">Imagem de fundo (URL, opcional)</label><input className="input-field" value={banner.image} onChange={(e) => updateBanner(index, { image: e.target.value })} placeholder="https://..." /></div>
                 </div>
