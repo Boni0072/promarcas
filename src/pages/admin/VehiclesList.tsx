@@ -26,8 +26,8 @@ export function VehiclesList() {
     async function load() {
       const all = await getAll<Vehicle>('vehicles');
       all.sort((a, b) => {
-        const da = a.createdAt?.seconds ? a.createdAt.seconds * 1000 : 0;
-        const db = b.createdAt?.seconds ? b.createdAt.seconds * 1000 : 0;
+        const da = new Date(a.created_at || 0).getTime() || 0;
+        const db = new Date(b.created_at || 0).getTime() || 0;
         return db - da;
       });
       setVehicles(all);

@@ -306,7 +306,7 @@ export function Dashboard() {
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} />
             <YAxis stroke="#9ca3af" fontSize={12} tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
-            <Tooltip formatter={(value: number) => formatCurrency(value)} contentStyle={{ borderRadius: '12px', border: '1px solid #e5e7eb', fontSize: '13px' }} />
+            <Tooltip formatter={(value) => formatCurrency(Number(value ?? 0))} contentStyle={{ borderRadius: '12px', border: '1px solid #e5e7eb', fontSize: '13px' }} />
             <Legend />
             <Area type="monotone" dataKey="Receitas" stroke="#666d75" strokeWidth={2} fill="url(#colorReceita)" />
             <Area type="monotone" dataKey="Despesas" stroke="#3d434a" strokeWidth={2} fill="url(#colorDespesa)" />
