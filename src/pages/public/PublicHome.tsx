@@ -130,7 +130,7 @@ export function PublicHome() {
         <div className="mb-6">
           <div className="flex items-center gap-3">
             <img src="/Promarcas%20logos.png" alt="PRÓMARCAS" className="h-30 w-auto object-contain sm:h-28" />
-            <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+            <h1 className="text-5xl font-bold text-gray-900 sm:text-4xl">
               Encontre o carro dos seus sonhos
             </h1>
           </div>
