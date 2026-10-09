@@ -31,8 +31,10 @@ function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?
   // Restrição por perfil (roles). Só avalia quando o perfil já carregou —
   // enquanto `profile` é null, `canAccess`/`hasRole` retornam false e um
   // admin seria redirecionado indevidamente para /admin.
+  // Obs.: o perfil administrador passa em qualquer lista de `roles` (acesso total).
   if (profile && roles && !hasRole(...roles)) return <Navigate to="/admin" replace />;
-  // Restrição por página (acesso concedido ao criar/editar o usuário)
+  // Restrição por página (acesso concedido ao criar/editar o usuário).
+  // `canAccess` já concede acesso total ao administrador, ignorando `pages`.
   const navItem = resolveNavPath(location.pathname);
   if (profile && navItem && !canAccess(profile, navItem.path, navItem.roles)) {
     return <Navigate to="/admin" replace />;

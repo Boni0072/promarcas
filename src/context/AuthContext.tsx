@@ -93,7 +93,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   function hasRole(...roles: UserRole[]): boolean {
     if (!profile) return false;
     // Normaliza para tolerar perfis gravados como "administrador", "ADMIN" etc.
-    return roles.includes(normalizeRole(profile.role));
+    const role = normalizeRole(profile.role);
+    // Perfil administrador tem acesso a TUDO: ignora a lista de perfis solicitada.
+    if (role === 'admin') return true;
+    return roles.includes(role);
   }
 
   return (
