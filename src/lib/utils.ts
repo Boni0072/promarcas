@@ -257,8 +257,37 @@ export function exportToCSV(filename: string, headers: string[], rows: (string |
   link.click();
 }
 
+/**
+ * Normaliza um número de WhatsApp para o padrão usado em links wa.me:
+ * remove formatação e garante o DDI 55 quando o número é brasileiro.
+ */
+export function normalizeWhatsAppPhone(phone: string | null | undefined): string {
+  const digits = String(phone ?? '').replace(/\D/g, '');
+  if (!digits) return '';
+  // Já está no padrão internacional com DDI 55 (ex.: 5511999999999).
+  if (digits.startsWith('55') && digits.length >= 12) return digits;
+  // Número nacional (DDD + 8 ou 9 dígitos): aplica o DDI 55 automaticamente.
+  if (digits.length >= 10 && digits.length <= 11) return `55${digits}`;
+  return digits;
+}
+
+/** Formata o valor digitado no campo de WhatsApp para exibição (pt-BR). */
+export function formatWhatsAppPhoneInput(value: string): string {
+  const digits = String(value ?? '').replace(/\D/g, '').slice(0, 13);
+  const formatNational = (d: string): string => {
+    if (d.length <= 2) return d;
+    if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+    if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+  };
+  if (digits.startsWith('55') && digits.length > 2) {
+    return `55 ${formatNational(digits.slice(2))}`;
+  }
+  return formatNational(digits);
+}
+
 export function generateWhatsAppLink(phone: string, message: string): string {
-  const cleanPhone = phone.replace(/\D/g, '');
+  const cleanPhone = normalizeWhatsAppPhone(phone);
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
 }
 

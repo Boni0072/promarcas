@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Save, Target, Building2, Images, Plus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Target, Building2, Images, Plus, Trash2, ArrowUp, ArrowDown, MessageCircle } from 'lucide-react';
 import { getAll, create, update as updateDoc } from '@/lib/firestore';
 import type { Settings, BannerSlide } from '@/types';
 import { LoadingState } from '@/components/ui/States';
 import { BANNER_GRADIENT_GROUPS, BANNER_GRADIENT_OPTIONS, DEFAULT_BANNERS, MAX_BANNERS, createBanner } from '@/lib/banners';
+import { formatWhatsAppPhoneInput, generateWhatsAppLink, normalizeWhatsAppPhone } from '@/lib/utils';
 
 const DEFAULT_SETTINGS: Settings = {
   id: '',
@@ -94,11 +95,13 @@ export function SettingsPage() {
     setSaving(true);
     try {
       const now = new Date().toISOString();
+      // WhatsApp salvo já normalizado (só dígitos + DDI 55 quando aplicável).
+      const dataToSave = { ...settings, company_whatsapp: normalizeWhatsAppPhone(settings.company_whatsapp) };
       if (settings.id) {
-        const { id, ...data } = settings;
+        const { id, ...data } = dataToSave;
         await updateDoc<Settings>('settings', id, { ...data, updated_at: now });
       } else {
-        const { id, ...data } = settings;
+        const { id, ...data } = dataToSave;
         await create('settings', { ...data, created_at: now, updated_at: now });
       }
       setSaved(true);
@@ -114,6 +117,9 @@ export function SettingsPage() {
   if (loading) return <LoadingState />;
   if (!settings) return <LoadingState />;
 
+  // Número de WhatsApp já normalizado (DDI 55) — usado na prévia da seção.
+  const waNumber = normalizeWhatsAppPhone(settings.company_whatsapp);
+
   return (
     <div className="space-y-6">
       <div>
@@ -127,9 +133,52 @@ export function SettingsPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div><label className="label">Nome da Empresa</label><input className="input-field" value={settings.company_name} onChange={(e) => update('company_name', e.target.value)} /></div>
             <div><label className="label">Telefone</label><input className="input-field" value={settings.company_phone} onChange={(e) => update('company_phone', e.target.value)} /></div>
-            <div><label className="label">WhatsApp (com DDI)</label><input className="input-field" value={settings.company_whatsapp} onChange={(e) => update('company_whatsapp', e.target.value)} placeholder="5511999999999" /></div>
             <div><label className="label">E-mail</label><input className="input-field" value={settings.company_email} onChange={(e) => update('company_email', e.target.value)} /></div>
             <div className="sm:col-span-2"><label className="label">Endereço</label><input className="input-field" value={settings.company_address} onChange={(e) => update('company_address', e.target.value)} /></div>
+          </div>
+        </div>
+
+        <div className="card p-5">
+          <div className="mb-1 flex items-center gap-2"><MessageCircle className="h-5 w-5 text-success-600" /><h3 className="font-bold text-gray-900">WhatsApp de Atendimento</h3></div>
+          <p className="mb-4 text-sm text-gray-500">
+            Cadastre o número que recebe as mensagens enviadas pelos botões da vitrine pública
+            (cards de veículos, página do veículo, banners e "Entre em contato").
+            Pode digitar com ou sem DDI — o padrão <strong>55</strong> é aplicado automaticamente.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="label">Número do WhatsApp</label>
+              <input
+                type="tel"
+                className="input-field"
+                value={formatWhatsAppPhoneInput(settings.company_whatsapp)}
+                onChange={(e) => update('company_whatsapp', formatWhatsAppPhoneInput(e.target.value))}
+                placeholder="(11) 99999-9999"
+              />
+              <p className="mt-1 text-xs text-gray-400">Ex.: 5511999999999 ou apenas (11) 99999-9999</p>
+            </div>
+            <div>
+              <label className="label">Prévia</label>
+              {waNumber.length >= 12 ? (
+                <div className="space-y-2 rounded-lg bg-success-50 px-3 py-2.5">
+                  <p className="text-sm text-success-700">
+                    As mensagens chegarão em <strong>+{waNumber}</strong>.
+                  </p>
+                  <a
+                    href={generateWhatsAppLink(settings.company_whatsapp, 'Olá! Teste de mensagem vindas da vitrine.')}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm font-semibold text-success-700 hover:text-success-800"
+                  >
+                    <MessageCircle className="h-4 w-4" /> Enviar mensagem de teste
+                  </a>
+                </div>
+              ) : (
+                <p className="rounded-lg bg-gray-50 px-3 py-2.5 text-sm text-gray-400">
+                  Preencha o número para visualizar o link usado nos botões da vitrine.
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
