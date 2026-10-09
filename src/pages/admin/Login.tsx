@@ -65,7 +65,7 @@ export function Login() {
       <div className="relative w-full max-w-md">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex justify-center">
-            <img src="/Promarcas logo.png" alt="PRÓMARCAS MOTORS" className="h-20 w-auto" />
+            <img src="/Promarcas logo.png" alt="PRÓMARCAS MOTORS" className="h-60 w-auto" />
           </div>
           <p className="mt-1 text-sm text-gray-400">Plataforma de gestão para revenda de veículos</p>
         </div>
