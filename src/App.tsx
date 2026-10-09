@@ -24,8 +24,9 @@ import { canAccess, resolveNavPath } from '@/lib/navigation';
 import type { UserRole } from '@/types';
 
 function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?: UserRole[] }) {
-  const { user, profile, hasRole } = useAuth();
+  const { user, profile, loading, hasRole } = useAuth();
   const location = useLocation();
+  if (loading) return <div className="min-h-screen flex items-center justify-center text-sm text-gray-500">Carregando…</div>;
   if (!user) return <Navigate to="/login" replace />;
   // Restrição por perfil (roles)
   if (roles && profile && !hasRole(...roles)) return <Navigate to="/admin" replace />;
@@ -67,11 +68,11 @@ function AppRoutes() {
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
+    <BrowserRouter>
+      <AuthProvider>
         <AppRoutes />
-      </BrowserRouter>
-    </AuthProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 

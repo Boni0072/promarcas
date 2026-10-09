@@ -1,19 +1,9 @@
 import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signOut as fbSignOut } from 'firebase/auth';
-import { auth, db, rtdb } from '@/lib/firebase';
+import { auth, db, rtdb, firebaseConfig } from '@/lib/firebase';
 import { ref, set, onValue, onDisconnect, serverTimestamp, off } from 'firebase/database';
 import { doc, setDoc } from 'firebase/firestore';
 import type { UserRole } from '@/types';
-
-const firebaseConfig = {
-  apiKey: 'AIzaSyAHLusZnZueNB5hewPSz1XznUB3xMygvyw',
-  authDomain: 'fechamentooba.firebaseapp.com',
-  databaseURL: 'https://fechamentooba-default-rtdb.firebaseio.com',
-  projectId: 'fechamentooba',
-  storageBucket: 'fechamentooba.firebasestorage.app',
-  messagingSenderId: '508432978183',
-  appId: '1:508432978183:web:d316c127c4882ee85f35a2',
-};
 
 export interface PresenceData {
   online: boolean;

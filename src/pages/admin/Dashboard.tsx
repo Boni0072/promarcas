@@ -46,24 +46,32 @@ export function Dashboard() {
   const [period, setPeriod] = useState<'day' | 'week' | 'month' | 'year'>('month');
 
   useEffect(() => {
+    let cancelled = false;
     async function load() {
-      const [v, c, s, e, r, set] = await Promise.all([
-        getAll<Vehicle>('vehicles'),
-        getAll<VehicleCost>('vehicle_costs'),
-        getAll<VehicleSale>('vehicle_sales'),
-        getAll<Expense>('expenses'),
-        getAll<Revenue>('revenues'),
-        getAll<Settings>('settings'),
-      ]);
-      setVehicles(v);
-      setCosts(c);
-      setSales(s);
-      setExpenses(e);
-      setRevenues(r);
-      setSettings(set[0] || null);
-      setLoading(false);
+      try {
+        const [v, c, s, e, r, set] = await Promise.all([
+          getAll<Vehicle>('vehicles'),
+          getAll<VehicleCost>('vehicle_costs'),
+          getAll<VehicleSale>('vehicle_sales'),
+          getAll<Expense>('expenses'),
+          getAll<Revenue>('revenues'),
+          getAll<Settings>('settings'),
+        ]);
+        if (cancelled) return;
+        setVehicles(v);
+        setCosts(c);
+        setSales(s);
+        setExpenses(e);
+        setRevenues(r);
+        setSettings(set[0] || null);
+      } catch (err) {
+        console.error('[dashboard] falha ao carregar dados:', err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     }
     load();
+    return () => { cancelled = true; };
   }, []);
 
   // Quem não tem acesso financeiro (vendedor) só enxerga as próprias vendas.

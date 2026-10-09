@@ -23,18 +23,24 @@ export function AdminLayout({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
+    let cancelled = false;
     async function loadNotifications() {
-      const all = await getAll<Notification>('notifications');
-      all.sort((a, b) => {
-        const da = new Date(a.created_at || 0).getTime();
-        const db = new Date(b.created_at || 0).getTime();
-        return db - da;
-      });
-      setNotifications(all.slice(0, 20));
+      try {
+        const all = await getAll<Notification>('notifications');
+        if (cancelled) return;
+        all.sort((a, b) => {
+          const da = new Date(a.created_at || 0).getTime();
+          const db = new Date(b.created_at || 0).getTime();
+          return db - da;
+        });
+        setNotifications(all.slice(0, 20));
+      } catch (err) {
+        console.error('[admin] falha ao carregar notifications:', err);
+      }
     }
     loadNotifications();
     const interval = setInterval(loadNotifications, 30000);
-    return () => clearInterval(interval);
+    return () => { cancelled = true; clearInterval(interval); };
   }, []);
 
   // Rastreia a presença do usuário logado (qual página ele está acessando)
