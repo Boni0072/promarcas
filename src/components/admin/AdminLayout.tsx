@@ -8,7 +8,8 @@ import { setPresence } from '@/lib/presence';
 import { getAll, update } from '@/lib/firestore';
 import { navSections, navItems, canAccess } from '@/lib/navigation';
 import type { Notification } from '@/types';
-import { ROLE_LABELS, formatDate } from '@/lib/utils';
+import { ROLE_LABELS, formatDate, normalizeRole } from '@/lib/utils';
+import { avatarInicial } from '@/components/admin/AvatarUploader';
 
 export function AdminLayout({ children }: { children: ReactNode }) {
   const { user, profile, loading, signOut, hasRole } = useAuth();
@@ -180,12 +181,16 @@ export function AdminLayout({ children }: { children: ReactNode }) {
 
         <div className="border-t border-cherry-900 p-3">
           <div className="flex items-center gap-3 rounded-lg px-3 py-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-sm font-bold text-cherry-800">
-              {profile.name?.charAt(0).toUpperCase() || 'U'}
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-white text-sm font-bold text-cherry-800">
+              {profile.avatar_url ? (
+                <img src={profile.avatar_url} alt={`Avatar de ${profile.name || 'usuário'}`} className="h-full w-full object-cover" />
+              ) : (
+                avatarInicial(profile.name)
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <p className="truncate text-sm font-semibold text-white">{profile.name || 'Usuário'}</p>
-              <p className="text-xs text-white/70">{ROLE_LABELS[profile.role] || profile.role}</p>
+              <p className="text-xs text-white/70">{ROLE_LABELS[normalizeRole(profile.role)] || profile.role}</p>
             </div>
             <button onClick={handleSignOut} className="rounded-lg p-1.5 text-white/80 hover:bg-cherry-900 hover:text-white">
               <LogOut className="h-5 w-5" />

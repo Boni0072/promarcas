@@ -6,9 +6,9 @@ import type { BannerSlide } from '@/types';
  * apenas strings completas no código-fonte para gerar o CSS.
  */
 export const BANNER_GRADIENT_OPTIONS: { label: string; value: string }[] = [
-  { label: 'Vermelho (marca)', value: 'from-primary-600 to-primary-900' },
-  { label: 'Vermelho escuro', value: 'from-primary-800 to-primary-950' },
-  { label: 'Vermelho vivo', value: 'from-primary-500 to-primary-800' },
+  { label: 'Cinza (marca)', value: 'from-primary-600 to-primary-900' },
+  { label: 'Cinza escuro', value: 'from-primary-800 to-primary-950' },
+  { label: 'Cinza claro', value: 'from-primary-500 to-primary-800' },
   { label: 'Grafite', value: 'from-gray-900 to-gray-700' },
   { label: 'Preto', value: 'from-black to-gray-800' },
   { label: 'Marinho', value: 'from-slate-800 to-slate-950' },

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, UserPlus, User, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { ROLE_LABELS, ROLE_ORDER } from '@/lib/utils';
+import type { UserRole } from '@/types';
 
 export function Login() {
   const { signIn, signUp } = useAuth();
@@ -9,7 +11,7 @@ export function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [role, setRole] = useState<string>('administrador');
+  const [role, setRole] = useState<UserRole>('admin');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -32,7 +34,7 @@ export function Login() {
     e.preventDefault();
     setError(null);
     setCreating(true);
-    const { error } = await signUp(email, password, name, role as any);
+    const { error } = await signUp(email, password, name, role);
     if (error) {
       setError(error);
       setCreating(false);
@@ -40,7 +42,7 @@ export function Login() {
       setEmail('');
       setPassword('');
       setName('');
-      setRole('administrador');
+      setRole('admin');
       setCreating(false);
       navigate('/admin');
     }
@@ -139,10 +141,8 @@ export function Login() {
                     <label className="label">Perfil</label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-                      <select value={role} onChange={(e) => setRole(e.target.value)} className="input-field pl-11">
-                        <option value="administrador">Administrador</option>
-                        <option value="gerente">Gerente</option>
-                        <option value="vendedor">Vendedor</option>
+                      <select value={role} onChange={(e) => setRole(e.target.value as UserRole)} className="input-field pl-11">
+                        {ROLE_ORDER.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
                       </select>
                     </div>
                   </div>

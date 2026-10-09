@@ -3,6 +3,7 @@ import {
   TrendingUp, ShoppingCart, Wallet, ArrowLeftRight, FileBarChart,
   Settings, Users, type LucideIcon,
 } from 'lucide-react';
+import { normalizeRole } from '@/lib/utils';
 
 export interface NavItem {
   path: string;
@@ -74,7 +75,7 @@ export const navItems: NavItem[] = navSections.flatMap((s) => s.items);
 
 /**
  * Verifica se um perfil pode acessar um determinado path.
- * - admin sempre tem acesso total;
+ * - admin (ou qualquer variação do rótulo, ex. "administrador") sempre tem acesso total;
  * - respeita restrição de `roles` do item;
  * - respeita a lista de `pages` do perfil quando definida (undefined = sem restrição por página).
  */
@@ -86,8 +87,10 @@ export function canAccess(
   if (!profile) return false;
   // Dashboard sempre acessível a quem está logado
   if (path === '/admin') return true;
-  if (profile.role === 'admin') return true;
-  if (roles && !roles.includes(profile.role)) return false;
+  // Perfil administrador: acesso total, ignora `roles` e `pages`.
+  if (normalizeRole(profile.role) === 'admin') return true;
+  const role = normalizeRole(profile.role);
+  if (roles && !roles.includes(role)) return false;
   if (profile.pages) return profile.pages.includes(path);
   return true;
 }

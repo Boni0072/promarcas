@@ -217,7 +217,8 @@ export function Dashboard() {
     return Object.entries(buckets).map(([name, value]) => ({ name, value }));
   }, [activeVehicles]);
 
-  const stockAgeColors = ['#10b981', '#f59e0b', '#fbbf24', '#f87171', '#dc2626'];
+  // Escala de cinza (claro -> escuro) conforme a idade do estoque aumenta.
+  const stockAgeColors = ['#d6dadf', '#b2b9c0', '#8a9199', '#4d545b', '#21252a'];
 
   const capitalParado = useMemo(() => {
     return activeVehicles.map((v) => ({ vehicle: v, capital: calculateVehicleTotalCost(v.purchase_value, costsByVehicle[v.id] || []), days: daysInStock(v) }))
@@ -298,18 +299,18 @@ export function Dashboard() {
         <ResponsiveContainer width="100%" height={300}>
           <AreaChart data={chartData}>
             <defs>
-              <linearGradient id="colorReceita" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.3} /><stop offset="95%" stopColor="#10b981" stopOpacity={0} /></linearGradient>
-              <linearGradient id="colorDespesa" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} /><stop offset="95%" stopColor="#ef4444" stopOpacity={0} /></linearGradient>
-              <linearGradient id="colorLucro" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#1c6af0" stopOpacity={0.3} /><stop offset="95%" stopColor="#1c6af0" stopOpacity={0} /></linearGradient>
+              <linearGradient id="colorReceita" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#666d75" stopOpacity={0.3} /><stop offset="95%" stopColor="#666d75" stopOpacity={0} /></linearGradient>
+              <linearGradient id="colorDespesa" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3d434a" stopOpacity={0.3} /><stop offset="95%" stopColor="#3d434a" stopOpacity={0} /></linearGradient>
+              <linearGradient id="colorLucro" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#b2b9c0" stopOpacity={0.3} /><stop offset="95%" stopColor="#b2b9c0" stopOpacity={0} /></linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} />
             <YAxis stroke="#9ca3af" fontSize={12} tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
             <Tooltip formatter={(value: number) => formatCurrency(value)} contentStyle={{ borderRadius: '12px', border: '1px solid #e5e7eb', fontSize: '13px' }} />
             <Legend />
-            <Area type="monotone" dataKey="Receitas" stroke="#10b981" strokeWidth={2} fill="url(#colorReceita)" />
-            <Area type="monotone" dataKey="Despesas" stroke="#ef4444" strokeWidth={2} fill="url(#colorDespesa)" />
-            <Area type="monotone" dataKey="Lucro" stroke="#1c6af0" strokeWidth={2} fill="url(#colorLucro)" />
+            <Area type="monotone" dataKey="Receitas" stroke="#666d75" strokeWidth={2} fill="url(#colorReceita)" />
+            <Area type="monotone" dataKey="Despesas" stroke="#3d434a" strokeWidth={2} fill="url(#colorDespesa)" />
+            <Area type="monotone" dataKey="Lucro" stroke="#b2b9c0" strokeWidth={2} fill="url(#colorLucro)" />
           </AreaChart>
         </ResponsiveContainer>
         <div className="mt-4 grid grid-cols-2 gap-4 border-t border-gray-100 pt-4 sm:grid-cols-4">

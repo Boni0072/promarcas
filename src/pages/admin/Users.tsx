@@ -2,15 +2,16 @@ import { useState, useEffect } from 'react';
 import { Users as UsersIcon, Shield, UserPlus, Monitor, Wifi, WifiOff, Loader2, ChevronDown, Pencil } from 'lucide-react';
 import { update } from '@/lib/firestore';
 import { db, auth } from '@/lib/firebase';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { collection, onSnapshot, deleteField } from 'firebase/firestore';
 import type { Profile, UserRole } from '@/types';
-import { ROLE_LABELS } from '@/lib/utils';
+import { ROLE_LABELS, ROLE_ORDER, normalizeRole } from '@/lib/utils';
 import { LoadingState, EmptyState } from '@/components/ui/States';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { useAuth } from '@/context/AuthContext';
 import { createUserWithRole, subscribePresence, type PresenceData } from '@/lib/presence';
 import { navSections } from '@/lib/navigation';
+import { AvatarUploader, avatarInicial } from '@/components/admin/AvatarUploader';
 
 export function Users() {
   const { hasRole } = useAuth();
@@ -23,6 +24,7 @@ export function Users() {
   const [saving, setSaving] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
   const [form, setForm] = useState({ name: '', email: '', password: '', phone: '', role: 'vendedor' as UserRole });
+  const [avatarUrl, setAvatarUrl] = useState('');
   const [selectedPages, setSelectedPages] = useState<string[]>([]);
   const [openSections, setOpenSections] = useState<string[]>([]);
 
@@ -30,11 +32,16 @@ export function Users() {
   const [editing, setEditing] = useState<Profile | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ name: '', phone: '', role: 'vendedor' as UserRole });
+  const [editAvatar, setEditAvatar] = useState('');
   const [editPages, setEditPages] = useState<string[]>([]);
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'profiles'), (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() })) as Profile[];
+      // Normaliza os perfis para o conjunto canônico de roles (ex.: "administrador" -> "admin").
+      const list = snap.docs.map((d) => {
+        const data = d.data() as Partial<Profile>;
+        return { id: d.id, ...data, role: normalizeRole(data.role) } as Profile;
+      });
       setProfiles(list);
       setLoading(false);
     });
@@ -46,8 +53,17 @@ export function Users() {
     return () => unsub();
   }, []);
 
-  async function changeRole(id: string, role: UserRole) {
-    await update('profiles', id, { role } as any);
+  async function changeRole(p: Profile, role: UserRole) {
+    const safeRole = normalizeRole(role);
+    if (safeRole === 'admin') {
+      // Admin tem acesso total: apaga qualquer restrição de páginas gravada.
+      await update('profiles', p.id, { role: safeRole, pages: deleteField() } as any);
+    } else if (!Array.isArray(p.pages)) {
+      // Perfis restritos sem lista de páginas definida: garante ao menos o Dashboard.
+      await update('profiles', p.id, { role: safeRole, pages: ['/admin'] } as any);
+    } else {
+      await update('profiles', p.id, { role: safeRole } as any);
+    }
   }
 
   async function toggleActive(id: string, active: boolean) {
@@ -74,7 +90,8 @@ export function Users() {
 
   function openEdit(p: Profile) {
     setEditing(p);
-    setEditForm({ name: p.name || '', phone: p.phone || '', role: p.role });
+    setEditForm({ name: p.name || '', phone: p.phone || '', role: normalizeRole(p.role) });
+    setEditAvatar(p.avatar_url || '');
     setEditPages(Array.isArray(p.pages) ? p.pages : []);
     setEditError(null);
   }
@@ -92,8 +109,12 @@ export function Users() {
       await update('profiles', editing.id, {
         name: editForm.name.trim(),
         phone: editForm.phone.trim(),
-        role: editForm.role,
-        pages: editForm.role === 'admin' ? [] : editPages,
+        role: normalizeRole(editForm.role),
+        // Foto do perfil: grava a nova ou apaga a anterior quando removida.
+        avatar_url: editAvatar ? editAvatar : deleteField(),
+        // Admin: apaga a restrição de páginas (acesso total).
+        // Outros perfis: grava exatamente as páginas marcadas.
+        pages: normalizeRole(editForm.role) === 'admin' ? deleteField() : editPages,
       } as any);
       setEditing(null);
     } catch {
@@ -123,7 +144,8 @@ export function Users() {
       form.name.trim(),
       form.role,
       form.phone.trim(),
-      selectedPages
+      selectedPages,
+      avatarUrl
     );
     setSaving(false);
 
@@ -133,6 +155,7 @@ export function Users() {
     }
     setShowAdd(false);
     setForm({ name: '', email: '', password: '', phone: '', role: 'vendedor' });
+    setAvatarUrl('');
     setSelectedPages([]);
   }
 
@@ -171,8 +194,12 @@ export function Users() {
             return (
               <div key={p.id} className="card p-5">
                 <div className="flex items-start gap-3">
-                  <div className="relative flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-primary-100 text-lg font-bold text-primary-700">
-                    {p.name?.charAt(0).toUpperCase() || 'U'}
+                  <div className="relative flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary-100 text-lg font-bold text-primary-700">
+                    {p.avatar_url ? (
+                      <img src={p.avatar_url} alt={`Avatar de ${p.name || 'usuário'}`} className="h-full w-full object-cover" />
+                    ) : (
+                      avatarInicial(p.name)
+                    )}
                     <span
                       className={`absolute -right-0.5 -bottom-0.5 h-3.5 w-3.5 rounded-full border-2 border-white ${
                         online ? 'bg-success-500' : 'bg-gray-300'
@@ -210,10 +237,10 @@ export function Users() {
                   <div>
                     <label className="label">Perfil de Acesso</label>
                     {p.id === auth.currentUser?.uid ? (
-                      <Badge className={roleColors[p.role]}>{ROLE_LABELS[p.role]}</Badge>
+                      <Badge className={roleColors[normalizeRole(p.role)]}>{ROLE_LABELS[normalizeRole(p.role)]}</Badge>
                     ) : (
-                      <select className="input-field" value={p.role} onChange={(e) => changeRole(p.id, e.target.value as UserRole)}>
-                        {Object.entries(ROLE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                      <select className="input-field" value={p.role} onChange={(e) => changeRole(p, e.target.value as UserRole)}>
+                        {ROLE_ORDER.map((v) => <option key={v} value={v}>{ROLE_LABELS[v]}</option>)}
                       </select>
                     )}
                   </div>
@@ -238,9 +265,9 @@ export function Users() {
       <div className="card p-5">
         <div className="mb-3 flex items-center gap-2"><Shield className="h-5 w-5 text-primary-600" /><h3 className="font-bold text-gray-900">Permissões por Perfil</h3></div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {Object.entries(ROLE_LABELS).map(([role, label]) => (
+          {ROLE_ORDER.map((role) => (
             <div key={role} className="rounded-lg border border-gray-100 p-3">
-              <Badge className={roleColors[role as UserRole]}>{label}</Badge>
+              <Badge className={roleColors[role]}>{ROLE_LABELS[role]}</Badge>
               <p className="mt-2 text-xs text-gray-500">
                 {role === 'admin' && 'Acesso total ao sistema, incluindo configurações e usuários.'}
                 {role === 'gerente' && 'Gestão completa, exceto configurações do sistema.'}
@@ -255,6 +282,7 @@ export function Users() {
       {/* Modal: Adicionar usuário */}
       <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Adicionar usuário">
         <form onSubmit={handleCreateUser} className="space-y-4">
+          <AvatarUploader value={avatarUrl} name={form.name} onChange={setAvatarUrl} disabled={saving} />
           <div>
             <label className="label">Nome completo *</label>
             <input className="input-field" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ex.: João da Silva" />
@@ -275,8 +303,8 @@ export function Users() {
           </div>
           <div>
             <label className="label">Perfil de Acesso</label>
-            <select className="input-field" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as UserRole })}>
-              {Object.entries(ROLE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            <select className="input-field" value={form.role} onChange={(e) => setForm({ ...form, role: normalizeRole(e.target.value) })}>
+              {ROLE_ORDER.map((v) => <option key={v} value={v}>{ROLE_LABELS[v]}</option>)}
             </select>
           </div>
 
@@ -319,7 +347,8 @@ export function Users() {
                         <div className="grid gap-1.5 border-t border-gray-100 p-2 sm:grid-cols-2">
                           {selectable.map((item) => {
                             const checked = selectedPages.includes(item.path);
-                            const locked = !!item.roles && !item.roles.includes(form.role);
+                            // Admin acessa tudo: nada é bloqueado para ele.
+                            const locked = !!item.roles && normalizeRole(form.role) !== 'admin' && !item.roles.includes(normalizeRole(form.role));
                             return (
                               <label
                                 key={item.path}
@@ -372,6 +401,7 @@ export function Users() {
       {/* Modal: Editar usuário */}
       <Modal open={!!editing} onClose={() => setEditing(null)} title="Editar usuário">
         <form onSubmit={handleUpdateUser} className="space-y-4">
+          <AvatarUploader value={editAvatar} name={editForm.name} onChange={setEditAvatar} disabled={saving} />
           <div>
             <label className="label">Nome completo *</label>
             <input className="input-field" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} placeholder="Ex.: João da Silva" />
@@ -388,9 +418,9 @@ export function Users() {
                 value={editForm.role}
                 disabled={editing?.id === auth.currentUser?.uid}
                 title={editing?.id === auth.currentUser?.uid ? 'Você não pode alterar o próprio perfil.' : undefined}
-                onChange={(e) => setEditForm({ ...editForm, role: e.target.value as UserRole })}
+                onChange={(e) => setEditForm({ ...editForm, role: normalizeRole(e.target.value) })}
               >
-                {Object.entries(ROLE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                {ROLE_ORDER.map((v) => <option key={v} value={v}>{ROLE_LABELS[v]}</option>)}
               </select>
               {editing?.id === auth.currentUser?.uid && (
                 <p className="mt-1 text-xs text-gray-400">Você não pode alterar o próprio perfil de acesso.</p>
@@ -437,7 +467,8 @@ export function Users() {
                         <div className="grid gap-1.5 border-t border-gray-100 p-2 sm:grid-cols-2">
                           {selectable.map((item) => {
                             const checked = editPages.includes(item.path);
-                            const locked = !!item.roles && !item.roles.includes(editForm.role);
+                            // Admin acessa tudo: nada é bloqueado para ele.
+                            const locked = !!item.roles && normalizeRole(editForm.role) !== 'admin' && !item.roles.includes(normalizeRole(editForm.role));
                             return (
                               <label
                                 key={item.path}

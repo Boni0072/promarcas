@@ -10,6 +10,7 @@ import {
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import type { Profile, UserRole } from '@/types';
+import { normalizeRole } from '@/lib/utils';
 
 interface AuthContextType {
   user: User | null;
@@ -34,7 +35,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (u) {
         const pDoc = await getDoc(doc(db, 'profiles', u.uid));
         if (pDoc.exists()) {
-          setProfile({ id: u.uid, ...pDoc.data() } as Profile);
+          // Normaliza o perfil para o conjunto canônico de roles.
+          const data = pDoc.data() as Partial<Profile>;
+          setProfile({ id: u.uid, ...data, role: normalizeRole(data.role) } as Profile);
         } else {
           const newProfile = {
             id: u.uid,
@@ -65,13 +68,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function signUp(email: string, password: string, name: string, role: UserRole = 'vendedor') {
     try {
+      const safeRole = normalizeRole(role);
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(cred.user, { displayName: name });
       const newProfile = {
         id: cred.user.uid,
         name,
         phone: '',
-        role,
+        role: safeRole,
         active: true,
       };
       await setDoc(doc(db, 'profiles', cred.user.uid), newProfile);
@@ -88,7 +92,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   function hasRole(...roles: UserRole[]): boolean {
     if (!profile) return false;
-    return roles.includes(profile.role);
+    // Normaliza para tolerar perfis gravados como "administrador", "ADMIN" etc.
+    return roles.includes(normalizeRole(profile.role));
   }
 
   return (

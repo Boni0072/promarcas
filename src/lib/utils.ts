@@ -9,6 +9,7 @@ import type {
   RevenueCategory,
   Expense,
   Revenue,
+  UserRole,
 } from '@/types';
 
 export function formatCurrency(value: number): string {
@@ -126,7 +127,7 @@ export const VEHICLE_STATUS_COLORS: Record<VehicleStatus, string> = {
   reservado: 'bg-purple-100 text-purple-700',
   vendido: 'bg-emerald-100 text-emerald-700',
   entregue: 'bg-teal-100 text-teal-700',
-  cancelado: 'bg-red-100 text-red-700',
+  cancelado: 'bg-gray-200 text-gray-800',
 };
 
 export const ORIGIN_LABELS: Record<string, string> = {
@@ -191,7 +192,7 @@ export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
 export const PAYMENT_STATUS_COLORS: Record<PaymentStatus, string> = {
   pendente: 'bg-amber-100 text-amber-700',
   pago: 'bg-green-100 text-green-700',
-  vencido: 'bg-red-100 text-red-700',
+  vencido: 'bg-gray-300 text-gray-900',
   cancelado: 'bg-gray-100 text-gray-700',
 };
 
@@ -201,6 +202,40 @@ export const ROLE_LABELS: Record<string, string> = {
   vendedor: 'Vendedor',
   financeiro: 'Financeiro',
 };
+
+/** Ordem canônica dos perfis (usada nos selects de perfil). */
+export const ROLE_ORDER: UserRole[] = ['admin', 'gerente', 'vendedor', 'financeiro'];
+
+/**
+ * Normaliza qualquer variação de nome de perfil para um `UserRole` canônico.
+ *
+ * Existe porque perfis gravados no Firestore (ou vindos de forms antigos) podem
+ * usar rótulos em português como "administrador", "Administrador" ou "ADMIN".
+ * Sem essa normalização o perfil do administrador não bate com `role === 'admin'`
+ * e ele perde o acesso total ao sistema.
+ */
+const ROLE_ALIASES: Record<string, UserRole> = {
+  admin: 'admin',
+  administrador: 'admin',
+  administrator: 'admin',
+  adm: 'admin',
+  root: 'admin',
+  gerente: 'gerente',
+  manager: 'gerente',
+  gestor: 'gerente',
+  vendedor: 'vendedor',
+  vendor: 'vendedor',
+  vendedora: 'vendedor',
+  financeiro: 'financeiro',
+  financial: 'financeiro',
+  financas: 'financeiro',
+};
+
+export function normalizeRole(role: string | null | undefined): UserRole {
+  if (!role) return 'vendedor';
+  const key = String(role).trim().toLowerCase();
+  return ROLE_ALIASES[key] ?? (ROLE_ORDER.includes(key as UserRole) ? (key as UserRole) : 'vendedor');
+}
 
 export function getStockAgeBucket(days: number): string {
   if (days <= 15) return '0-15 dias';

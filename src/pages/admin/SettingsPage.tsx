@@ -160,7 +160,7 @@ export function SettingsPage() {
                   <div className="ml-auto flex items-center gap-1">
                     <button type="button" onClick={() => moveBanner(index, -1)} disabled={index === 0} aria-label="Mover para cima" className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-30"><ArrowUp className="h-4 w-4" /></button>
                     <button type="button" onClick={() => moveBanner(index, 1)} disabled={index === settings.banners.length - 1} aria-label="Mover para baixo" className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-30"><ArrowDown className="h-4 w-4" /></button>
-                    <button type="button" onClick={() => removeBanner(index)} aria-label="Excluir banner" className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"><Trash2 className="h-4 w-4" /></button>
+                    <button type="button" onClick={() => removeBanner(index)} aria-label="Excluir banner" className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-200 hover:text-gray-900"><Trash2 className="h-4 w-4" /></button>
                   </div>
                 </div>
 

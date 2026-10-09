@@ -1,14 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="320" height="96" viewBox="0 0 320 96" role="img" aria-label="PRÓMARCAS MOTORS">
   <g transform="translate(6,10) scale(0.42) translate(-103,-44)">
     <path d="M10 66 L10 55 C10 49 14 44 22 42 L50 32 C84 22 126 22 158 32 L182 42 C192 46 196 50 196 58 L196 66 Z" fill="#111827"/>
-    <path d="M60 41 L86 33 Q100 30 114 33 L142 41 L136 49 L64 49 Z" fill="#ff2800"/>
+    <path d="M60 41 L86 33 Q100 30 114 33 L142 41 L136 49 L64 49 Z" fill="#8a9199"/>
     <circle cx="50" cy="66" r="14" fill="#111827"/>
     <circle cx="50" cy="66" r="6" fill="#ffffff"/>
     <circle cx="158" cy="66" r="14" fill="#111827"/>
     <circle cx="158" cy="66" r="6" fill="#ffffff"/>
   </g>
   <text x="96" y="52" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="900" font-style="italic" letter-spacing="-1" fill="#111827">PRÓMARCAS</text>
-  <rect x="97" y="60" width="120" height="4" fill="#ff2800"/>
+  <rect x="97" y="60" width="120" height="4" fill="#4d545b"/>
   <rect x="97" y="67" width="120" height="4" fill="#111827"/>
   <g transform="translate(196,54) skewX(-14)">
     <rect x="0" y="0" width="62" height="18" fill="#111827"/>

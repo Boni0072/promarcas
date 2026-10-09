@@ -67,6 +67,8 @@ export interface Profile {
   phone: string;
   role: UserRole;
   active: boolean;
+  /** Foto do usuário em base64 (data URL), salva no próprio documento. */
+  avatar_url?: string;
   pages?: string[];
   created_at: string;
 }

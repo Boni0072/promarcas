@@ -28,11 +28,13 @@ function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?
   const location = useLocation();
   if (loading) return <div className="min-h-screen flex items-center justify-center text-sm text-gray-500">Carregando…</div>;
   if (!user) return <Navigate to="/login" replace />;
-  // Restrição por perfil (roles)
-  if (roles && profile && !hasRole(...roles)) return <Navigate to="/admin" replace />;
+  // Restrição por perfil (roles). Só avalia quando o perfil já carregou —
+  // enquanto `profile` é null, `canAccess`/`hasRole` retornam false e um
+  // admin seria redirecionado indevidamente para /admin.
+  if (profile && roles && !hasRole(...roles)) return <Navigate to="/admin" replace />;
   // Restrição por página (acesso concedido ao criar/editar o usuário)
   const navItem = resolveNavPath(location.pathname);
-  if (navItem && !canAccess(profile, navItem.path, navItem.roles)) {
+  if (profile && navItem && !canAccess(profile, navItem.path, navItem.roles)) {
     return <Navigate to="/admin" replace />;
   }
   return <>{children}</>;

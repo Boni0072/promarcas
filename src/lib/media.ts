@@ -23,13 +23,17 @@ function loadImageElement(file: File): Promise<HTMLImageElement> {
 }
 
 /**
- * Redimensiona a imagem para no máx. 1000px e converte para JPEG,
+ * Redimensiona a imagem para no máx. `maxDim`px e converte para JPEG,
  * reduzindo a qualidade até o data URL caber em `maxKB`.
  * (O Firestore limita cada documento a ~1MB, então o base64 precisa ser enxuto.)
  */
-export async function imageToCompressedDataUrl(file: File, maxKB: number): Promise<string> {
+export async function imageToCompressedDataUrl(
+  file: File,
+  maxKB: number,
+  maxDim: number = MAX_IMAGE_DIM
+): Promise<string> {
   const img = await loadImageElement(file);
-  const scale = Math.min(1, MAX_IMAGE_DIM / Math.max(img.naturalWidth, img.naturalHeight));
+  const scale = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight));
   const width = Math.max(1, Math.round(img.naturalWidth * scale));
   const height = Math.max(1, Math.round(img.naturalHeight * scale));
 
@@ -46,4 +50,36 @@ export async function imageToCompressedDataUrl(file: File, maxKB: number): Promi
     if (dataUrl.length <= maxChars) return dataUrl;
   }
   throw new Error(`"${file.name}" continua grande demais mesmo após compressão (máx ${maxKB}KB por imagem).`);
+}
+
+/** Dimensão e peso usados nos avatares de usuário (pequenos de propósito). */
+export const AVATAR_MAX_DIM = 256;
+export const AVATAR_MAX_KB = 40;
+
+/**
+ * Converte a imagem escolhida em um avatar quadrado e redondo, cortando
+ * pelo centro (crop quadrado) antes de redimensionar — assim o resultado
+ * fica sempre proporcional, independente do formato do arquivo original.
+ */
+export async function imageToAvatarDataUrl(file: File): Promise<string> {
+  const img = await loadImageElement(file);
+
+  // Crop quadrado centralizado.
+  const side = Math.min(img.naturalWidth, img.naturalHeight);
+  const sx = (img.naturalWidth - side) / 2;
+  const sy = (img.naturalHeight - side) / 2;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = AVATAR_MAX_DIM;
+  canvas.height = AVATAR_MAX_DIM;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Não foi possível processar a imagem neste navegador.');
+  ctx.drawImage(img, sx, sy, side, side, 0, 0, AVATAR_MAX_DIM, AVATAR_MAX_DIM);
+
+  const maxChars = AVATAR_MAX_KB * 1024;
+  for (const quality of [0.8, 0.65, 0.5, 0.35]) {
+    const dataUrl = canvas.toDataURL('image/jpeg', quality);
+    if (dataUrl.length <= maxChars) return dataUrl;
+  }
+  throw new Error(`"${file.name}" continua grande demais mesmo após compressão (máx ${AVATAR_MAX_KB}KB).`);
 }

@@ -4,6 +4,7 @@ import { auth, db, rtdb, firebaseConfig } from '@/lib/firebase';
 import { ref, set, onValue, onDisconnect, serverTimestamp, off } from 'firebase/database';
 import { doc, setDoc } from 'firebase/firestore';
 import type { UserRole } from '@/types';
+import { normalizeRole } from '@/lib/utils';
 
 export interface PresenceData {
   online: boolean;
@@ -23,7 +24,8 @@ export async function createUserWithRole(
   name: string,
   role: UserRole,
   phone = '',
-  pages?: string[]
+  pages?: string[],
+  avatarUrl = ''
 ): Promise<{ error: string | null }> {
   const secondaryApp = initializeApp(firebaseConfig, 'secondary-' + Date.now());
   try {
@@ -31,16 +33,21 @@ export async function createUserWithRole(
     const cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
     await fbSignOut(secondaryAuth); // evita manter sessão secundária ativa
 
+    // Normaliza o perfil ("administrador" -> "admin") para não perder o acesso total.
+    const safeRole = normalizeRole(role);
+
     const newProfile: Record<string, unknown> = {
       id: cred.user.uid,
       name,
       phone,
-      role,
+      role: safeRole,
       active: true,
       created_at: new Date().toISOString(),
     };
+    // Foto do perfil (base64), quando o administrador enviou uma.
+    if (avatarUrl) newProfile.avatar_url = avatarUrl;
     // admin tem acesso total; para outros perfis, salva as páginas selecionadas
-    if (role !== 'admin') {
+    if (safeRole !== 'admin') {
       newProfile.pages = pages && pages.length > 0 ? pages : ['/admin'];
     }
     await setDoc(doc(db, 'profiles', cred.user.uid), newProfile);
