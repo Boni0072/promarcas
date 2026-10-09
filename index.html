@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/icon-192.svg" />
+    <link rel="apple-touch-icon" href="/icon-192.svg" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#ff2800" />
+    <meta name="description" content="PRÓMARCAS - Plataforma de gestão para revenda de veículos" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="PRÓMARCAS" />
+    <title>PRÓMARCAS — Gestão de Veículos</title>
+    <meta property="og:image" content="Promarcas logo.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="Promarcas logo.png" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // Service worker apenas em produção — em desenvolvimento (localhost)
+      // ele quebra o HMR do Vite e cacheia módulos antigos.
+      if ('serviceWorker' in navigator && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
+        });
+      } else if ('serviceWorker' in navigator) {
+        // Remove qualquer SW antigo registrado pelo dev server
+        navigator.serviceWorker.getRegistrations?.().then((rs) => rs.forEach((r) => r.unregister())).catch(() => {});
+      }
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

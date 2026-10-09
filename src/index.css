@@ -1,0 +1,88 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-primary-700 active:scale-[0.98] disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-gray-100 px-4 py-2.5 text-sm font-semibold text-gray-700 transition-all hover:bg-gray-200 active:scale-[0.98];
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-error-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-error-700 active:scale-[0.98];
+  }
+  .btn-success {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-success-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-success-700 active:scale-[0.98];
+  }
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 transition-all hover:bg-gray-50 active:scale-[0.98];
+  }
+  .input-field {
+    @apply w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 transition-all focus:border-primary-500 focus:ring-2 focus:ring-primary-200 focus:outline-none;
+  }
+  .card {
+    @apply rounded-xl border border-gray-200 bg-white shadow-sm;
+  }
+  .card-hover {
+    @apply rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md hover:border-gray-300;
+  }
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+  .label {
+    @apply block text-sm font-medium text-gray-700 mb-1.5;
+  }
+  .stat-card {
+    @apply rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:shadow-md;
+  }
+  /* ===== Layout automobilístico (vitrine pública) ===== */
+  .input-dark {
+    @apply w-full rounded-lg border-2 border-neutral-700 bg-neutral-900 px-3.5 py-2.5 text-sm font-medium text-white placeholder-neutral-500 transition-all focus:border-accent-400 focus:ring-2 focus:ring-accent-400/40 focus:outline-none;
+  }
+  .panel-dark {
+    @apply rounded-2xl border-2 border-neutral-800 bg-neutral-900/80 p-4 shadow-lg;
+  }
+  .skew-tag {
+    @apply inline-block -skew-x-12 transform px-3 py-1 text-xs font-black tracking-wider uppercase;
+  }
+  .glow-gold {
+    box-shadow: 0 0 18px -2px rgba(251, 191, 36, 0.55);
+  }
+  .speed-stripes {
+    background-image: repeating-linear-gradient(
+      135deg,
+      rgba(251, 191, 36, 0.06) 0px,
+      rgba(251, 191, 36, 0.06) 12px,
+      transparent 12px,
+      transparent 24px
+    );
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
