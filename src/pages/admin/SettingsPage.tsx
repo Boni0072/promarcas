@@ -185,12 +185,11 @@ export function SettingsPage() {
         <div className="card p-5">
           <div className="mb-4 flex items-center gap-2"><Target className="h-5 w-5 text-primary-600" /><h3 className="font-bold text-gray-900">Metas e Parâmetros</h3></div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div><label className="label">Margem Mínima (%)</label><input type="number" step="0.01" className="input-field" value={settings.min_margin_pct} onChange={(e) => update('min_margin_pct', parseFloat(e.target.value) || 0)} /></div>
+            <div><label className="label">Margem Mínima (%)</label><input type="number" step="0.01" className="input-field" value={settings.goal_min_margin} onChange={(e) => update('goal_min_margin', parseFloat(e.target.value) || 0)} /></div>
             <div><label className="label">Dias Máx. em Estoque</label><input type="number" className="input-field" value={settings.max_stock_days} onChange={(e) => update('max_stock_days', parseInt(e.target.value) || 0)} /></div>
             <div><label className="label">Meta de Vendas/mês</label><input type="number" className="input-field" value={settings.goal_monthly_sales} onChange={(e) => update('goal_monthly_sales', parseInt(e.target.value) || 0)} /></div>
             <div><label className="label">Meta Faturamento (R$)</label><input type="number" step="0.01" className="input-field" value={settings.goal_monthly_revenue} onChange={(e) => update('goal_monthly_revenue', parseFloat(e.target.value) || 0)} /></div>
             <div><label className="label">Meta Lucro (R$)</label><input type="number" step="0.01" className="input-field" value={settings.goal_monthly_profit} onChange={(e) => update('goal_monthly_profit', parseFloat(e.target.value) || 0)} /></div>
-            <div><label className="label">Margem Mín. Meta (%)</label><input type="number" step="0.01" className="input-field" value={settings.goal_min_margin} onChange={(e) => update('goal_min_margin', parseFloat(e.target.value) || 0)} /></div>
             <div><label className="label">Dias Máx. Meta</label><input type="number" className="input-field" value={settings.goal_max_stock_days} onChange={(e) => update('goal_max_stock_days', parseInt(e.target.value) || 0)} /></div>
             <div><label className="label">Orçamento Despesas (R$)</label><input type="number" step="0.01" className="input-field" value={settings.goal_max_expense_budget} onChange={(e) => update('goal_max_expense_budget', parseFloat(e.target.value) || 0)} /></div>
           </div>

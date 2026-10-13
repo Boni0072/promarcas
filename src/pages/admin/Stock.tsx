@@ -8,7 +8,7 @@ import { LoadingState, EmptyState } from '@/components/ui/States';
 import {
   formatCurrency, daysInStock, calculateVehicleTotalCost, calculateMargin,
   VEHICLE_STATUS_LABELS, VEHICLE_STATUS_COLORS, vehicleTitle, vehicleYear,
-  formatPercent, formatDate, getStockAgeBucket, exportToCSV,
+  formatPercent, formatDate, getStockAgeBucket, exportToCSV, getMinMargin,
 } from '@/lib/utils';
 import { FilterBar, SelectField } from '@/components/ui/FilterBar';
 import { useAuth } from '@/context/AuthContext';
@@ -151,7 +151,7 @@ export function Stock() {
                   {canSeeFinancials && <td className={`px-4 py-3 text-right font-semibold ${v.profit >= 0 ? 'text-success-600' : 'text-error-600'}`}>{formatCurrency(v.profit)}</td>}
                   {canSeeFinancials && (
                     <td className="px-4 py-3 text-right">
-                      <span className={`text-xs font-semibold ${v.margin >= (settings?.goal_min_margin || 12) ? 'text-success-600' : 'text-warning-600'}`}>{formatPercent(v.margin)}</span>
+                      <span className={`text-xs font-semibold ${v.margin >= getMinMargin(settings) ? 'text-success-600' : 'text-warning-600'}`}>{formatPercent(v.margin)}</span>
                     </td>
                   )}
                   <td className="px-4 py-3"><span className={`badge ${VEHICLE_STATUS_COLORS[v.status]}`}>{VEHICLE_STATUS_LABELS[v.status]}</span></td>

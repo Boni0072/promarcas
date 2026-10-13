@@ -14,7 +14,7 @@ import type { Vehicle, VehicleCost, VehicleSale, Expense, Revenue, Settings } fr
 import { StatCard } from '@/components/ui/StatCard';
 import {
   formatCurrency, formatPercent, daysInStock, calculateVehicleTotalCost,
-  calculateMargin, vehicleTitle, isOwnSale,
+  calculateMargin, vehicleTitle, isOwnSale, getMinMargin,
 } from '@/lib/utils';
 
 interface Alert {
@@ -119,7 +119,7 @@ export function Dashboard() {
   const alerts = useMemo<Alert[]>(() => {
     const result: Alert[] = [];
     const maxStockDays = settings?.max_stock_days || 60;
-    const minMargin = settings?.goal_min_margin || 12;
+    const minMargin = getMinMargin(settings);
 
     for (const v of activeVehicles) {
       const days = daysInStock(v);
@@ -133,7 +133,7 @@ export function Dashboard() {
         result.push({ type: 'danger', title: 'Preço abaixo do custo', message: `${vehicleTitle(v)} está anunciado abaixo do custo total`, vehicleId: v.id });
       }
       if (canSeeFinancials && v.advertised_price > 0 && tc > 0 && m < minMargin && v.advertised_price >= tc) {
-        result.push({ type: 'warning', title: 'Margem abaixo da meta', message: `${vehicleTitle(v)} com margem de ${formatPercent(m)}`, vehicleId: v.id });
+        result.push({ type: 'warning', title: 'Margem abaixo da meta', message: `${vehicleTitle(v)} com margem de ${formatPercent(m)} — meta de ${formatPercent(minMargin)}`, vehicleId: v.id });
       }
       if (canSeeFinancials) {
         const prepCosts = (costsByVehicle[v.id] || []).filter((c) => ['funilaria', 'pintura', 'mecanica', 'pneus', 'estetica', 'higienizacao'].includes(c.category)).reduce((s, c) => s + c.amount, 0);
@@ -378,7 +378,7 @@ export function Dashboard() {
                       <td className="py-3 text-gray-600">{formatCurrency(item.vehicle.sale_price)}</td>
                       <td className="py-3 text-gray-600">{formatCurrency(tc)}</td>
                       <td className="py-3 font-bold text-success-600">{formatCurrency(item.profit)}</td>
-                      <td className="py-3"><span className={`badge ${item.margin >= (settings?.goal_min_margin || 12) ? 'bg-success-100 text-success-700' : 'bg-warning-100 text-warning-700'}`}>{formatPercent(item.margin)}</span></td>
+                      <td className="py-3"><span className={`badge ${item.margin >= getMinMargin(settings) ? 'bg-success-100 text-success-700' : 'bg-warning-100 text-warning-700'}`}>{formatPercent(item.margin)}</span></td>
                     </tr>
                   );
                 })}
@@ -397,7 +397,7 @@ export function Dashboard() {
           {canSeeFinancials && (
             <>
               <GoalBar label="Lucro" current={netProfit} target={settings?.goal_monthly_profit || 20000} unit="R$" />
-              <GoalBar label="Margem mínima" current={margin} target={settings?.goal_min_margin || 12} unit="%" />
+              <GoalBar label="Margem mínima" current={margin} target={getMinMargin(settings)} unit="%" />
             </>
           )}
         </div>

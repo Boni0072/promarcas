@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { FileBarChart, Package, ShoppingCart, DollarSign, Receipt, Wallet, TrendingUp, Clock } from 'lucide-react';
 import { getAll } from '@/lib/firestore';
 import type { Vehicle, VehicleCost, VehicleSale, Expense, Revenue, Settings } from '@/types';
-import { formatCurrency, formatPercent, daysInStock, calculateVehicleTotalCost, calculateMargin, vehicleTitle, formatDate, exportToCSV, getStockAgeBucket, isOwnSale } from '@/lib/utils';
+import { formatCurrency, formatPercent, daysInStock, calculateVehicleTotalCost, calculateMargin, vehicleTitle, formatDate, exportToCSV, getStockAgeBucket, isOwnSale, getMinMargin } from '@/lib/utils';
 import { StatCard } from '@/components/ui/StatCard';
 import { LoadingState, EmptyState } from '@/components/ui/States';
 import { Badge } from '@/components/ui/Badge';
@@ -180,7 +180,7 @@ export function Reports() {
 
         {activeReport === 'margem' && (
           <div className="space-y-3">
-            {activeVehicles.map((v) => { const tc = calculateVehicleTotalCost(v.purchase_value, costsByVehicle[v.id] || []); const m = calculateMargin(v.advertised_price, tc); return (<div key={v.id} className="flex items-center gap-3"><div className="flex-1"><p className="text-sm font-medium">{vehicleTitle(v)}</p></div><div className="w-48"><div className="h-2.5 overflow-hidden rounded-full bg-gray-100"><div className={`h-full rounded-full ${m >= (settings?.goal_min_margin || 12) ? 'bg-success-500' : m >= 0 ? 'bg-warning-500' : 'bg-error-500'}`} style={{ width: `${Math.max(Math.min(m, 100), 0)}%` }} /></div></div><span className={`text-sm font-semibold w-20 text-right ${m >= (settings?.goal_min_margin || 12) ? 'text-success-600' : 'text-warning-600'}`}>{formatPercent(m)}</span></div>); })}
+            {activeVehicles.map((v) => { const tc = calculateVehicleTotalCost(v.purchase_value, costsByVehicle[v.id] || []); const m = calculateMargin(v.advertised_price, tc); return (<div key={v.id} className="flex items-center gap-3"><div className="flex-1"><p className="text-sm font-medium">{vehicleTitle(v)}</p></div><div className="w-48"><div className="h-2.5 overflow-hidden rounded-full bg-gray-100"><div className={`h-full rounded-full ${m >= getMinMargin(settings) ? 'bg-success-500' : m >= 0 ? 'bg-warning-500' : 'bg-error-500'}`} style={{ width: `${Math.max(Math.min(m, 100), 0)}%` }} /></div></div><span className={`text-sm font-semibold w-20 text-right ${m >= getMinMargin(settings) ? 'text-success-600' : 'text-warning-600'}`}>{formatPercent(m)}</span></div>); })}
           </div>
         )}
 

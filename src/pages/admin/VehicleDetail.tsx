@@ -12,7 +12,7 @@ import {
   VEHICLE_STATUS_LABELS, VEHICLE_STATUS_COLORS, ORIGIN_LABELS,
   COST_CATEGORY_LABELS, formatDate, calculateVehicleTotalCost,
   calculateGrossProfit, calculateMargin, calculateMarkup,
-  daysInStock, generateWhatsAppLink, isOwnSale,
+  daysInStock, generateWhatsAppLink, isOwnSale, getMinMargin,
 } from '@/lib/utils';
 import { Badge } from '@/components/ui/Badge';
 import { LoadingState, EmptyState } from '@/components/ui/States';
@@ -195,7 +195,7 @@ export function VehicleDetail() {
           <div className="card p-4"><p className="text-xs text-gray-400">Lucro Estimado</p><p className={`text-lg font-bold ${grossProfit >= 0 ? 'text-success-600' : 'text-error-600'}`}>{formatCurrency(grossProfit)}</p></div>
         )}
         {canSeeFinancials && (
-          <div className="card p-4"><p className="text-xs text-gray-400">Margem</p><p className={`text-lg font-bold ${margin >= (settings?.goal_min_margin || 12) ? 'text-success-600' : 'text-warning-600'}`}>{formatPercent(margin)}</p></div>
+          <div className="card p-4"><p className="text-xs text-gray-400">Margem</p><p className={`text-lg font-bold ${margin >= getMinMargin(settings) ? 'text-success-600' : 'text-warning-600'}`}>{formatPercent(margin)}</p></div>
         )}
         <div className="card p-4"><p className="text-xs text-gray-400">Dias em Estoque</p><p className={`text-lg font-bold ${days > (settings?.max_stock_days || 60) ? 'text-error-600' : 'text-gray-900'}`}>{days}</p></div>
       </div>
@@ -272,7 +272,7 @@ export function VehicleDetail() {
                 {canSeeFinancials && (
                   <>
                     <Row label="Lucro bruto estimado" value={formatCurrency(grossProfit)} bold color={grossProfit >= 0 ? 'success' : 'error'} />
-                    <Row label="Margem %" value={formatPercent(margin)} bold color={margin >= (settings?.goal_min_margin || 12) ? 'success' : 'warning'} />
+                    <Row label="Margem %" value={formatPercent(margin)} bold color={margin >= getMinMargin(settings) ? 'success' : 'warning'} />
                     <Row label="Markup %" value={formatPercent(markup)} />
                   </>
                 )}

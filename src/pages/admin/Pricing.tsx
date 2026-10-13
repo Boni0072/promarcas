@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { DollarSign, TrendingDown, TrendingUp, AlertTriangle } from 'lucide-react';
 import { getAll, getByField } from '@/lib/firestore';
 import type { Vehicle, VehicleCost, Settings } from '@/types';
-import { formatCurrency, formatPercent, calculateVehicleTotalCost, calculateMargin, calculateMarkup, calculateGrossProfit, vehicleTitle, exportToCSV } from '@/lib/utils';
+import { formatCurrency, formatPercent, calculateVehicleTotalCost, calculateMargin, calculateMarkup, calculateGrossProfit, vehicleTitle, exportToCSV, getMinMargin } from '@/lib/utils';
 import { StatCard } from '@/components/ui/StatCard';
 import { LoadingState, EmptyState } from '@/components/ui/States';
 import { Badge } from '@/components/ui/Badge';
@@ -43,7 +43,7 @@ export function Pricing() {
     });
   }, [vehicles, costs]);
 
-  const belowMinMargin = data.filter((v) => v.margin < (settings?.goal_min_margin || 12) && v.advertised_price > 0);
+  const belowMinMargin = data.filter((v) => v.margin < getMinMargin(settings) && v.advertised_price > 0);
   const belowCost = data.filter((v) => v.advertised_price > 0 && v.advertised_price < v.totalCost);
   const avgMargin = data.length > 0 ? data.reduce((s, v) => s + v.margin, 0) / data.length : 0;
 
@@ -63,7 +63,7 @@ export function Pricing() {
 
       {canSeeFinancials && (
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <StatCard title="Margem Média" value={formatPercent(avgMargin)} icon={DollarSign} color={avgMargin >= (settings?.goal_min_margin || 12) ? 'success' : 'warning'} />
+          <StatCard title="Margem Média" value={formatPercent(avgMargin)} icon={DollarSign} color={avgMargin >= getMinMargin(settings) ? 'success' : 'warning'} />
           <StatCard title="Abaixo da Meta" value={belowMinMargin.length} icon={TrendingDown} color="warning" subtitle="Veículos com margem baixa" />
           <StatCard title="Abaixo do Custo" value={belowCost.length} icon={AlertTriangle} color="error" subtitle="Prejuízo potencial" />
           <StatCard title="Lucro Total Est." value={formatCurrency(data.reduce((s, v) => s + v.profit, 0))} icon={TrendingUp} color="success" />
@@ -97,7 +97,7 @@ export function Pricing() {
                   <td className="px-4 py-3 text-right font-semibold text-gray-900">{formatCurrency(v.advertised_price)}</td>
                   <td className="px-4 py-3 text-right text-gray-500">{formatCurrency(v.min_price)}</td>
                   {canSeeFinancials && <td className={`px-4 py-3 text-right font-semibold ${v.profit >= 0 ? 'text-success-600' : 'text-error-600'}`}>{formatCurrency(v.profit)}</td>}
-                  {canSeeFinancials && <td className="px-4 py-3 text-right"><span className={`text-xs font-semibold ${v.margin >= (settings?.goal_min_margin || 12) ? 'text-success-600' : 'text-warning-600'}`}>{formatPercent(v.margin)}</span></td>}
+                  {canSeeFinancials && <td className="px-4 py-3 text-right"><span className={`text-xs font-semibold ${v.margin >= getMinMargin(settings) ? 'text-success-600' : 'text-warning-600'}`}>{formatPercent(v.margin)}</span></td>}
                   {canSeeFinancials && <td className="px-4 py-3 text-right text-gray-500 text-xs">{formatPercent(v.markup)}</td>}
                 </tr>
               ))}

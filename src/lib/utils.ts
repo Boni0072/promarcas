@@ -321,3 +321,17 @@ export function isOwnSale(
   const mine = normalizeName(name);
   return !!mine && normalizeName(sale.salesperson_name) === mine;
 }
+
+/** Margem mínima padrão (%) usada quando nada está configurado. */
+export const DEFAULT_MIN_MARGIN = 12;
+
+/**
+ * Retorna a margem mínima configurada (%) usada pelos alertas, badges e metas.
+ * Prioriza `goal_min_margin` (campo "Margem Mínima (%)" da tela de Configurações);
+ * `min_margin_pct` é o campo legado e entra apenas como fallback.
+ */
+export function getMinMargin(
+  settings?: { goal_min_margin?: number; min_margin_pct?: number } | null,
+): number {
+  return settings?.goal_min_margin || settings?.min_margin_pct || DEFAULT_MIN_MARGIN;
+}
