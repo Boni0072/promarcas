@@ -212,33 +212,66 @@ export function PublicHome() {
                   index === currentSlide ? 'opacity-100' : 'pointer-events-none opacity-0'
                 }`}
               >
-                <div className={`relative flex h-full w-full flex-col justify-center bg-gradient-to-r ${slide.gradient} px-6 sm:px-12`}>
-                  {slide.image && (
-                    <img src={slide.image} alt="" className="absolute inset-0 h-full w-full object-cover" />
-                  )}
-                  <div className="absolute inset-0 bg-black/40" />
-                  <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10" />
-                  <div className="pointer-events-none absolute -bottom-24 right-24 h-64 w-64 rounded-full bg-white/5" />
-                  <div className="relative max-w-xl">
-                    <span className="mb-3 inline-block rounded-full bg-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white">
-                      Destaque
-                    </span>
-                    <h2 className="text-2xl font-extrabold text-white drop-shadow sm:text-3xl md:text-4xl">
-                      {slide.title}
-                    </h2>
-                    <p className="mt-2 text-sm text-white/90 drop-shadow sm:text-base">
-                      {slide.subtitle}
-                    </p>
-                    <a
-                      href={contactLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-4 inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-primary-700 shadow transition-transform hover:scale-105"
-                    >
-                      {slide.cta} <MessageCircle className="h-4 w-4" />
-                    </a>
-                  </div>
-                </div>
+                {(() => {
+                  const isImageOnly =
+                    !slide.title.trim() && !slide.cta.trim() && !slide.subtitle.trim();
+
+                  if (isImageOnly) {
+                    return (
+                      <div className="relative h-full w-full">
+                        {slide.image ? (
+                          <img
+                            src={slide.image}
+                            alt=""
+                            loading={index === currentSlide ? 'eager' : 'lazy'}
+                            fetchPriority={index === currentSlide ? 'high' : 'auto'}
+                            decoding="async"
+                            className="absolute inset-0 h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className={`absolute inset-0 bg-gradient-to-r ${slide.gradient}`} />
+                        )}
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className={`relative flex h-full w-full flex-col justify-center bg-gradient-to-r ${slide.gradient} px-6 sm:px-12`}>
+                      {slide.image && (
+                        <img
+                          src={slide.image}
+                          alt=""
+                          loading={index === currentSlide ? 'eager' : 'lazy'}
+                          fetchPriority={index === currentSlide ? 'high' : 'auto'}
+                          decoding="async"
+                          className="absolute inset-0 h-full w-full object-cover"
+                        />
+                      )}
+                      <div className="absolute inset-0 bg-black/40" />
+                      <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10" />
+                      <div className="pointer-events-none absolute -bottom-24 right-24 h-64 w-64 rounded-full bg-white/5" />
+                      <div className="relative max-w-xl">
+                        <span className="mb-3 inline-block rounded-full bg-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white">
+                          Destaque
+                        </span>
+                        <h2 className="text-2xl font-extrabold text-white drop-shadow sm:text-3xl md:text-4xl">
+                          {slide.title}
+                        </h2>
+                        <p className="mt-2 text-sm text-white/90 drop-shadow sm:text-base">
+                          {slide.subtitle}
+                        </p>
+                        <a
+                          href={contactLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-primary-700 shadow transition-transform hover:scale-105"
+                        >
+                          {slide.cta} <MessageCircle className="h-4 w-4" />
+                        </a>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             ))}
 
