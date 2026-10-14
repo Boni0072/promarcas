@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Car, MessageCircle, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getAll } from '@/lib/firestore';
+import { logVisitOncePerSession } from '@/lib/access';
 import { DEFAULT_BANNERS } from '@/lib/banners';
 import type { Vehicle, Settings, BannerSlide } from '@/types';
 import { vehicleTitle, generateWhatsAppLink } from '@/lib/utils';
@@ -24,6 +25,11 @@ export function PublicHome() {
   const [fuel, setFuel] = useState('');
   const [sort, setSort] = useState<SortKey>('recentes');
   const [currentSlide, setCurrentSlide] = useState(0);
+
+  // Registra um acesso (visita) à vitrine pública, uma vez por sessão.
+  useEffect(() => {
+    logVisitOncePerSession();
+  }, []);
 
   const banners: BannerSlide[] = useMemo(() => {
     const configured = settings?.banners ?? [];
