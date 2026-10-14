@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AreaChart, Area, BarChart, Bar, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LabelList,
 } from 'recharts';
 import {
   DollarSign, TrendingUp, Package, Car, Wallet, Target, AlertTriangle,
@@ -20,27 +20,52 @@ import {
 
 type Period = 'day' | 'week' | 'month' | 'year';
 
-/** Constrói os intervalos (rótulo + início/fim) usados pelos gráficos do dashboard. */
-function buildPeriods(period: Period): { label: string; start: Date; end: Date }[] {
+/** Períodos disponíveis no gráfico de Controle de Acessos (sem "Semana"). */
+type AccessPeriod = 'day' | 'month' | 'year';
+
+/**
+ * Constrói os intervalos (rótulo + início/fim) usados pelo gráfico de controle
+ * de acessos.
+ * - 'day': dias do mês atual.
+ * - 'month' sem `selectedMonth`: acumulado por mês do ano vigente (12 meses).
+ * - 'month' com `selectedMonth` ('YYYY-MM'): dias do mês selecionado.
+ * - 'year': últimos 5 anos.
+ */
+function buildPeriods(period: AccessPeriod, selectedMonth?: string): { label: string; start: Date; end: Date }[] {
   const now = new Date();
   const periods: { label: string; start: Date; end: Date }[] = [];
 
-  if (period === 'day') {
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(now); d.setDate(d.getDate() - i);
-      periods.push({ label: d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }), start: new Date(d.setHours(0, 0, 0, 0)), end: new Date(d.setHours(23, 59, 59, 999)) });
+  // Modo "Mês" sem mês específico: acumulado por mês do ano vigente.
+  if (period === 'month' && !selectedMonth) {
+    const year = now.getFullYear();
+    for (let m = 0; m < 12; m++) {
+      const start = new Date(year, m, 1, 0, 0, 0, 0);
+      const end = new Date(year, m + 1, 0, 23, 59, 59, 999);
+      periods.push({ label: start.toLocaleDateString('pt-BR', { month: 'short' }), start, end });
     }
-  } else if (period === 'week') {
-    for (let i = 7; i >= 0; i--) {
-      const start = new Date(now); start.setDate(start.getDate() - i * 7);
-      const end = new Date(start); end.setDate(end.getDate() + 6);
-      periods.push({ label: `Sem ${8 - i}`, start, end });
+    return periods;
+  }
+
+  if (period === 'day' || period === 'month') {
+    let year = now.getFullYear();
+    let month = now.getMonth();
+    if (period === 'month' && selectedMonth) {
+      const [y, m] = selectedMonth.split('-').map(Number);
+      if (!Number.isNaN(y) && !Number.isNaN(m) && y > 0 && m >= 1 && m <= 12) {
+        year = y;
+        month = m - 1;
+      }
     }
-  } else if (period === 'month') {
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59);
-      periods.push({ label: d.toLocaleDateString('pt-BR', { month: 'short' }), start: d, end });
+    const lastDay = new Date(year, month + 1, 0); // último dia do mês
+    const cursor = new Date(year, month, 1);
+    while (cursor <= lastDay) {
+      const label = cursor.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+      periods.push({
+        label,
+        start: new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate(), 0, 0, 0, 0),
+        end: new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate(), 23, 59, 59, 999),
+      });
+      cursor.setDate(cursor.getDate() + 1);
     }
   } else {
     for (let i = 4; i >= 0; i--) {
@@ -79,7 +104,9 @@ export function Dashboard() {
   const [accessLogs, setAccessLogs] = useState<AccessLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<Period>('month');
-  const [accessPeriod, setAccessPeriod] = useState<Period>('day');
+  const [accessPeriod, setAccessPeriod] = useState<AccessPeriod>('day');
+  // '' = nenhum mês específico (no modo "Mês" mostra o acumulado do ano vigente).
+  const [accessMonth, setAccessMonth] = useState<string>('');
 
   useEffect(() => {
     let cancelled = false;
@@ -260,14 +287,19 @@ export function Dashboard() {
 
   // Contagem de acessos ao sistema por período (para o gráfico de controle de acessos).
   const accessChartData = useMemo(() => {
-    return buildPeriods(accessPeriod).map((p) => ({
+    return buildPeriods(accessPeriod, accessMonth).map((p) => ({
       name: p.label,
       Acessos: accessLogs.filter((a) => {
         const t = toTime((a as any).createdAt);
         return t >= p.start.getTime() && t <= p.end.getTime();
       }).length,
     }));
-  }, [accessPeriod, accessLogs]);
+  }, [accessPeriod, accessMonth, accessLogs]);
+
+  // Quando o gráfico tem "muitos" intervalos (dias de um mês), pulamos rótulos do
+  // eixo X e usamos fonte menor nos rótulos de dado. Ano e "Mês sem seleção"
+  // (acumulado por mês) têm poucos intervalos e exibem tudo.
+  const accessIsDense = accessPeriod === 'day' || (accessPeriod === 'month' && !!accessMonth);
 
   const totalAccesses = accessLogs.length;
 
@@ -341,25 +373,65 @@ export function Dashboard() {
             <Users className="h-5 w-5 text-primary-600" />
             <div><h2 className="text-lg font-bold text-gray-900">Controle de Acessos</h2><p className="text-sm text-gray-500">Contagem de acessos ao sistema por período</p></div>
           </div>
-          <div className="flex gap-1 rounded-lg bg-gray-100 p-1">
-            {(['day', 'week', 'month', 'year'] as const).map((p) => (
-              <button key={p} onClick={() => setAccessPeriod(p)} className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${accessPeriod === p ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500'}`}>
-                {p === 'day' ? 'Dia' : p === 'week' ? 'Semana' : p === 'month' ? 'Mês' : 'Ano'}
-              </button>
-            ))}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex gap-1 rounded-lg bg-gray-100 p-1">
+              {(['day', 'month', 'year'] as const).map((p) => (
+                <button key={p} onClick={() => setAccessPeriod(p)} className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${accessPeriod === p ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500'}`}>
+                  {p === 'day' ? 'Dia' : p === 'month' ? 'Mês' : 'Ano'}
+                </button>
+              ))}
+            </div>
+            {accessPeriod === 'month' && (
+              <div className="flex items-center gap-1">
+                <input
+                  type="month"
+                  value={accessMonth}
+                  onChange={(e) => setAccessMonth(e.target.value)}
+                  aria-label="Selecionar mês (vazio = ano vigente)"
+                  title="Selecione um mês ou deixe vazio para ver o ano vigente"
+                  className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 shadow-sm transition focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                />
+                {accessMonth && (
+                  <button
+                    type="button"
+                    onClick={() => setAccessMonth('')}
+                    aria-label="Limpar mês selecionado"
+                    title="Limpar mês (ver ano vigente)"
+                    className="rounded-lg px-2 py-1.5 text-xs font-semibold text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
+                  >
+                    Limpar
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
-        <ResponsiveContainer width="100%" height={250}>
-          <BarChart data={accessChartData}>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={accessChartData} margin={{ top: 20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} />
+            <XAxis
+              dataKey="name"
+              stroke="#9ca3af"
+              fontSize={11}
+              interval={accessIsDense ? 4 : 0}
+            />
             <YAxis stroke="#9ca3af" fontSize={12} allowDecimals={false} />
             <Tooltip
               formatter={(value) => [`${value ?? 0} acesso(s)`, 'Acessos']}
               contentStyle={{ borderRadius: '12px', border: '1px solid #e5e7eb', fontSize: '13px' }}
             />
             <Legend />
-            <Bar dataKey="Acessos" fill="#666d75" radius={[6, 6, 0, 0]} />
+            <Bar dataKey="Acessos" fill="#666d75" radius={[6, 6, 0, 0]}>
+              <LabelList
+                dataKey="Acessos"
+                position="top"
+                offset={8}
+                fill="#4d545b"
+                fontSize={accessIsDense ? 10 : 12}
+                fontWeight={600}
+                formatter={(value: any) => (Number(value) > 0 ? String(value) : '')}
+              />
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
         <div className="mt-4 grid grid-cols-2 gap-4 border-t border-gray-100 pt-4 sm:grid-cols-3">
