@@ -6,9 +6,10 @@ import {
 } from 'recharts';
 import {
   DollarSign, TrendingUp, Package, Car, Wallet, Target, AlertTriangle,
-  ShoppingCart, Clock, Percent, AlertOctagon, AlertCircle, CheckCircle2,
+  ShoppingCart, Clock, Percent, AlertOctagon, AlertCircle, CheckCircle2, Users,
 } from 'lucide-react';
 import { getAll } from '@/lib/firestore';
+import type { AccessLog } from '@/lib/access';
 import { useAuth } from '@/context/AuthContext';
 import type { Vehicle, VehicleCost, VehicleSale, Expense, Revenue, Settings } from '@/types';
 import { StatCard } from '@/components/ui/StatCard';
@@ -16,6 +17,39 @@ import {
   formatCurrency, formatPercent, daysInStock, calculateVehicleTotalCost,
   calculateMargin, vehicleTitle, isOwnSale, getMinMargin,
 } from '@/lib/utils';
+
+type Period = 'day' | 'week' | 'month' | 'year';
+
+/** Constrói os intervalos (rótulo + início/fim) usados pelos gráficos do dashboard. */
+function buildPeriods(period: Period): { label: string; start: Date; end: Date }[] {
+  const now = new Date();
+  const periods: { label: string; start: Date; end: Date }[] = [];
+
+  if (period === 'day') {
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now); d.setDate(d.getDate() - i);
+      periods.push({ label: d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }), start: new Date(d.setHours(0, 0, 0, 0)), end: new Date(d.setHours(23, 59, 59, 999)) });
+    }
+  } else if (period === 'week') {
+    for (let i = 7; i >= 0; i--) {
+      const start = new Date(now); start.setDate(start.getDate() - i * 7);
+      const end = new Date(start); end.setDate(end.getDate() + 6);
+      periods.push({ label: `Sem ${8 - i}`, start, end });
+    }
+  } else if (period === 'month') {
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59);
+      periods.push({ label: d.toLocaleDateString('pt-BR', { month: 'short' }), start: d, end });
+    }
+  } else {
+    for (let i = 4; i >= 0; i--) {
+      const y = now.getFullYear() - i;
+      periods.push({ label: String(y), start: new Date(y, 0, 1), end: new Date(y, 11, 31, 23, 59, 59) });
+    }
+  }
+  return periods;
+}
 
 interface Alert {
   type: 'danger' | 'warning';
@@ -42,20 +76,23 @@ export function Dashboard() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [revenues, setRevenues] = useState<Revenue[]>([]);
   const [settings, setSettings] = useState<Settings | null>(null);
+  const [accessLogs, setAccessLogs] = useState<AccessLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState<'day' | 'week' | 'month' | 'year'>('month');
+  const [period, setPeriod] = useState<Period>('month');
+  const [accessPeriod, setAccessPeriod] = useState<Period>('day');
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       try {
-        const [v, c, s, e, r, set] = await Promise.all([
+        const [v, c, s, e, r, set, access] = await Promise.all([
           getAll<Vehicle>('vehicles'),
           getAll<VehicleCost>('vehicle_costs'),
           getAll<VehicleSale>('vehicle_sales'),
           getAll<Expense>('expenses'),
           getAll<Revenue>('revenues'),
           getAll<Settings>('settings'),
+          getAll<AccessLog>('access_logs'),
         ]);
         if (cancelled) return;
         setVehicles(v);
@@ -64,6 +101,7 @@ export function Dashboard() {
         setExpenses(e);
         setRevenues(r);
         setSettings(set[0] || null);
+        setAccessLogs(access);
       } catch (err) {
         console.error('[dashboard] falha ao carregar dados:', err);
       } finally {
@@ -220,6 +258,19 @@ export function Dashboard() {
   // Escala de cinza (claro -> escuro) conforme a idade do estoque aumenta.
   const stockAgeColors = ['#d6dadf', '#b2b9c0', '#8a9199', '#4d545b', '#21252a'];
 
+  // Contagem de acessos ao sistema por período (para o gráfico de controle de acessos).
+  const accessChartData = useMemo(() => {
+    return buildPeriods(accessPeriod).map((p) => ({
+      name: p.label,
+      Acessos: accessLogs.filter((a) => {
+        const t = toTime((a as any).createdAt);
+        return t >= p.start.getTime() && t <= p.end.getTime();
+      }).length,
+    }));
+  }, [accessPeriod, accessLogs]);
+
+  const totalAccesses = accessLogs.length;
+
   const capitalParado = useMemo(() => {
     return activeVehicles.map((v) => ({ vehicle: v, capital: calculateVehicleTotalCost(v.purchase_value, costsByVehicle[v.id] || []), days: daysInStock(v) }))
       .sort((a, b) => b.capital - a.capital).slice(0, 5);
@@ -282,6 +333,40 @@ export function Dashboard() {
         <StatCard title="Ticket Médio" value={formatCurrency(ticketMedio)} icon={Car} color="accent" />
         <StatCard title="Dias Médios em Estoque" value={avgDaysInStock.toFixed(0)} icon={Clock} color={avgDaysInStock > (settings?.max_stock_days || 60) ? 'warning' : 'success'} />
         {canSeeFinancials && <StatCard title="Despesas (Pagas)" value={formatCurrency(totalExpenses)} icon={Wallet} color="error" />}
+      </div>
+
+      <div className="card p-5">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-primary-600" />
+            <div><h2 className="text-lg font-bold text-gray-900">Controle de Acessos</h2><p className="text-sm text-gray-500">Contagem de acessos ao sistema por período</p></div>
+          </div>
+          <div className="flex gap-1 rounded-lg bg-gray-100 p-1">
+            {(['day', 'week', 'month', 'year'] as const).map((p) => (
+              <button key={p} onClick={() => setAccessPeriod(p)} className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${accessPeriod === p ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500'}`}>
+                {p === 'day' ? 'Dia' : p === 'week' ? 'Semana' : p === 'month' ? 'Mês' : 'Ano'}
+              </button>
+            ))}
+          </div>
+        </div>
+        <ResponsiveContainer width="100%" height={250}>
+          <BarChart data={accessChartData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} />
+            <YAxis stroke="#9ca3af" fontSize={12} allowDecimals={false} />
+            <Tooltip
+              formatter={(value) => [`${value ?? 0} acesso(s)`, 'Acessos']}
+              contentStyle={{ borderRadius: '12px', border: '1px solid #e5e7eb', fontSize: '13px' }}
+            />
+            <Legend />
+            <Bar dataKey="Acessos" fill="#666d75" radius={[6, 6, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+        <div className="mt-4 grid grid-cols-2 gap-4 border-t border-gray-100 pt-4 sm:grid-cols-3">
+          <div><p className="text-xs text-gray-400">Total de acessos</p><p className="text-lg font-bold text-primary-600">{totalAccesses}</p></div>
+          <div><p className="text-xs text-gray-400">Acessos no período</p><p className="text-lg font-bold text-accent-600">{accessChartData.reduce((s, d) => s + d.Acessos, 0)}</p></div>
+          <div><p className="text-xs text-gray-400">Média por intervalo</p><p className="text-lg font-bold text-success-600">{(accessChartData.reduce((s, d) => s + d.Acessos, 0) / (accessChartData.length || 1)).toFixed(1)}</p></div>
+        </div>
       </div>
 
       {canSeeFinancials && (

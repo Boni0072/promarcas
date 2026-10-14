@@ -11,6 +11,7 @@ import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import type { Profile, UserRole } from '@/types';
 import { normalizeRole } from '@/lib/utils';
+import { logAccess } from '@/lib/access';
 
 interface AuthContextType {
   user: User | null;
@@ -59,7 +60,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function signIn(email: string, password: string) {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      // Registra o acesso ao sistema (não bloqueia o login em caso de falha).
+      const u = cred.user;
+      try {
+        const pDoc = await getDoc(doc(db, 'profiles', u.uid));
+        const role = pDoc.exists() ? normalizeRole((pDoc.data() as Partial<Profile>).role) : 'vendedor';
+        void logAccess({
+          userId: u.uid,
+          name: u.displayName || (pDoc.exists() ? ((pDoc.data() as Partial<Profile>).name || '') : ''),
+          email: u.email || email,
+          role,
+        });
+      } catch {
+        void logAccess({ userId: u.uid, name: u.displayName || '', email: u.email || email, role: 'vendedor' });
+      }
       return { error: null };
     } catch (err: any) {
       return { error: translateError(err.code) };

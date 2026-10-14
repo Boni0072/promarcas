@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Save, Target, Building2, Images, Plus, Trash2, ArrowUp, ArrowDown, MessageCircle } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Target, Building2, Images, Plus, Trash2, ArrowUp, ArrowDown, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { getAll, create, update as updateDoc } from '@/lib/firestore';
 import type { Settings, BannerSlide } from '@/types';
 import { LoadingState } from '@/components/ui/States';
@@ -32,6 +32,7 @@ export function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [bannersOpen, setBannersOpen] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -196,9 +197,22 @@ export function SettingsPage() {
         </div>
 
         <div className="card p-5">
-          <div className="mb-1 flex items-center gap-2"><Images className="h-5 w-5 text-primary-600" /><h3 className="font-bold text-gray-900">Banners da Vitrine</h3></div>
+          <button
+            type="button"
+            onClick={() => setBannersOpen((prev) => !prev)}
+            aria-expanded={bannersOpen}
+            className="mb-1 flex w-full items-center gap-2 text-left"
+          >
+            <Images className="h-5 w-5 shrink-0 text-primary-600" />
+            <h3 className="flex-1 font-bold text-gray-900">Banners da Vitrine</h3>
+            {bannersOpen
+              ? <ChevronUp className="h-5 w-5 shrink-0 text-gray-400" />
+              : <ChevronDown className="h-5 w-5 shrink-0 text-gray-400" />}
+          </button>
           <p className="mb-4 text-sm text-gray-500">Slides rotativos exibidos na página pública, abaixo dos filtros. Use as setas ↑↓ para reordenar, a lixeira para excluir, ou desmarque <em>Ativo</em> para ocultar sem excluir. As alterações são aplicadas após <strong>Salvar configurações</strong>.</p>
 
+          {bannersOpen && (
+          <>
           <div className="space-y-4">
             {settings.banners.map((banner, index) => (
               <div key={banner.id} className="rounded-xl border border-gray-200 p-4">
@@ -274,6 +288,8 @@ export function SettingsPage() {
           <button type="button" onClick={addBanner} disabled={settings.banners.length >= MAX_BANNERS} className="btn-secondary mt-4">
             <Plus className="h-4 w-4" /> Adicionar banner ({settings.banners.length}/{MAX_BANNERS})
           </button>
+          </>
+          )}
         </div>
 
         <div className="flex gap-3">
